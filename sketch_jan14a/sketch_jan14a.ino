@@ -1,3 +1,10 @@
+#include <ESP8266Wifi.h>
+#include <FirebaseClient.h>
+
+#define
+
+
+
 // กำหนดขาของเซนเซอร์
 #define SENSOR_DIGITAL_PIN D0 // GPIO16
 #define SENSOR_ANALOG_PIN D2 // GPIO4 (เปลี่ยนตามบอร์ด)
@@ -28,6 +35,6 @@ void loop() {
   Serial.println(analogValue);
 
   // หน่วงเวลา 500 มิลลิวินาที
-  delay(500);
+  delay(100);
 }
 
