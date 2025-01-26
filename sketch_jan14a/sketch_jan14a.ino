@@ -1,9 +1,10 @@
+
 #include <ESP8266WiFi.h>
 #include <FirebaseESP8266.h> // Use Firebase ESP8266 Library
 
 // Wi-Fi credentials
-#define WIFI_SSID "I'am Shadow!"
-#define WIFI_PASSWORD "open2255"
+#define WIFI_SSID "My ssid"
+#define WIFI_PASSWORD "My password"
 
 // Firebase setup
 #define FIREBASE_HOST "your-database-name.firebaseio.com" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL 
