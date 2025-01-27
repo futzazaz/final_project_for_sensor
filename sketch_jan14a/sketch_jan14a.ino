@@ -41,7 +41,7 @@ void connectToWiFi() {
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        Serial.print(".");
+        Serial.println(".");
         indicateError(2); // Blink LED 2 times
     }
     Serial.println("\nConnected to Wi-Fi");
