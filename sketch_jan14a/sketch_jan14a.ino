@@ -3,8 +3,8 @@
 #include <EEPROM.h>
 
 // Wi-Fi credentials
-#define WIFI_SSID "I'am Shadow!"
-#define WIFI_PASSWORD "open2255"
+#define WIFI_SSID "Mi 11 Lite"//I'am Shadow!
+#define WIFI_PASSWORD "Futzazaz140815"//open2255
 
 // Firebase setup
 #define FIREBASE_HOST "test-esp8266-project-1f1a5-default-rtdb.asia-southeast1.firebasedatabase.app" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL
@@ -42,6 +42,7 @@ void connectToWiFi() {
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         Serial.print(".");
+        indicateError(2); // Blink LED 2 times
     }
     Serial.println("\nConnected to Wi-Fi");
 }
@@ -54,7 +55,7 @@ void connectToFirebase() {
 
     if (!Firebase.ready()) {
         Serial.println("Failed to connect to Firebase!");
-        indicateError(2); // Blink LED 2 times
+        indicateError(1); // Blink LED 1 times
         while (true); // Stop execution
     }
     Serial.println("Connected to Firebase");
@@ -63,7 +64,7 @@ void connectToFirebase() {
 void checkWiFiConnection() {
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("Wi-Fi disconnected. Reconnecting...");
-        indicateError(1); // Blink 1 time
+        indicateError(2); // Blink 2 time
         connectToWiFi();
     }
 }
@@ -71,16 +72,16 @@ void checkWiFiConnection() {
 void checkFirebaseConnection() {
     if (!Firebase.ready()) {
         Serial.println("Firebase disconnected. Reconnecting...");
-        indicateError(2); // Blink 2 times
+        indicateError(3); // Blink 3 times
         connectToFirebase();
     }
 }
 
 void indicateError(int errorCode) {
     for (int i = 0; i < errorCode; i++) {
-        digitalWrite(LED_PIN, LOW); // LED ON (Active Low)
+        digitalWrite(LED_PIN, HIGH); // LED ON (Active Low)
         delay(500);
-        digitalWrite(LED_PIN, HIGH); // LED OFF
+        digitalWrite(LED_PIN, LOW); // LED OFF
         delay(500);
     }
 }
