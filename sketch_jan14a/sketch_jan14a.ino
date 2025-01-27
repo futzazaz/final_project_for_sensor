@@ -64,7 +64,7 @@ void connectToFirebase() {
 void checkWiFiConnection() {
     if (WiFi.status() != WL_CONNECTED) {
         Serial.println("Wi-Fi disconnected. Reconnecting...");
-        indicateError(2); // Blink 2 time
+        indicateError(3); // Blink 2 time
         connectToWiFi();
     }
 }
@@ -72,7 +72,7 @@ void checkWiFiConnection() {
 void checkFirebaseConnection() {
     if (!Firebase.ready()) {
         Serial.println("Firebase disconnected. Reconnecting...");
-        indicateError(3); // Blink 3 times
+        indicateError(4); // Blink 3 times
         connectToFirebase();
     }
 }
@@ -104,6 +104,7 @@ void sendDataToFirebase(unsigned long timerDuration) {
     } else {
         Serial.print("Failed to send data to Firebase: ");
         Serial.println(firebaseData.errorReason());
+        indicateError(5);
     }
 }
 
