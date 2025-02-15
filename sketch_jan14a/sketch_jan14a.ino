@@ -5,9 +5,6 @@
 
 // Wi-Fi credentials
 
-#define WIFI_SSID "My ssid"
-#define WIFI_PASSWORD "My password"
-
 #define WIFI_SSID "Mi 11 Lite"//I'am Shadow!
 #define WIFI_PASSWORD "Futzazaz140815"//
 
