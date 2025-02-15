@@ -4,13 +4,13 @@
 #include <EEPROM.h>
 
 // Wi-Fi credentials
-<<<<<<< HEAD
+
 #define WIFI_SSID "My ssid"
 #define WIFI_PASSWORD "My password"
-=======
+
 #define WIFI_SSID "Mi 11 Lite"//I'am Shadow!
 #define WIFI_PASSWORD "Futzazaz140815"//open2255
->>>>>>> Peeranat_branch
+
 
 // Firebase setup
 #define FIREBASE_HOST "test-esp8266-project-1f1a5-default-rtdb.asia-southeast1.firebasedatabase.app" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL
