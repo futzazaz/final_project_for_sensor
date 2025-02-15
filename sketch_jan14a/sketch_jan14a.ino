@@ -1,96 +1,153 @@
 
 #include <ESP8266WiFi.h>
-#include <FirebaseESP8266.h> // Use Firebase ESP8266 Library
+#include <FirebaseESP8266.h>
+#include <EEPROM.h>
 
 // Wi-Fi credentials
+<<<<<<< HEAD
 #define WIFI_SSID "My ssid"
 #define WIFI_PASSWORD "My password"
+=======
+#define WIFI_SSID "Mi 11 Lite"//I'am Shadow!
+#define WIFI_PASSWORD "Futzazaz140815"//open2255
+>>>>>>> Peeranat_branch
 
 // Firebase setup
-#define FIREBASE_HOST "your-database-name.firebaseio.com" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL 
-#define FIREBASE_AUTH "your-firebase-auth-key"           // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Secret or Web API Key
-
-FirebaseData firebaseData;
+#define FIREBASE_HOST "test-esp8266-project-1f1a5-default-rtdb.asia-southeast1.firebasedatabase.app" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL
+#define FIREBASE_AUTH "hTeAguIl0EvE11JXhhfc69htrpTV916kftfLokUA" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Secret or Web API Key
 
 // Sensor connections
-#define SENSOR_DIGITAL_PIN D0 // GPIO16
-#define SENSOR_ANALOG_PIN D2  // GPIO4
+#define SENSOR_DIGITAL_PIN 16 // GPIO16
+#define SENSOR_ANALOG_PIN 4  // GPIO4
+
+// LED pin
+#define LED_PIN 2 // GPIO2 (LED on ESP8266 board)
 
 // Timer variables
 unsigned long startTime = 0;
 unsigned long duration = 0;
 bool timerRunning = false;
 
+// Firebase object
+FirebaseData firebaseData;
+FirebaseConfig firebaseConfig;
+FirebaseAuth firebaseAuth;
+
+// Function prototypes
+void connectToWiFi();
+void connectToFirebase();
+void checkWiFiConnection();
+void checkFirebaseConnection();
+void indicateError(int errorCode);
+unsigned long calculateDuration(unsigned long start, unsigned long end);
+void sendDataToFirebase(unsigned long timerDuration);
+
+void connectToWiFi() {
+    Serial.println("Connecting to Wi-Fi...");
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.println(".");
+        indicateError(2); // Blink LED 2 times
+    }
+    Serial.println("\nConnected to Wi-Fi");
+}
+
+void connectToFirebase() {
+    Serial.println("Connecting to Firebase...");
+    firebaseConfig.host = FIREBASE_HOST;
+    firebaseConfig.signer.tokens.legacy_token = FIREBASE_AUTH;
+    Firebase.begin(&firebaseConfig, &firebaseAuth);
+
+    if (!Firebase.ready()) {
+        Serial.println("Failed to connect to Firebase!");
+        indicateError(1); // Blink LED 1 times
+        while (true); // Stop execution
+    }
+    Serial.println("Connected to Firebase");
+}
+
+void checkWiFiConnection() {
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("Wi-Fi disconnected. Reconnecting...");
+        indicateError(3); // Blink 2 time
+        connectToWiFi();
+    }
+}
+
+void checkFirebaseConnection() {
+    if (!Firebase.ready()) {
+        Serial.println("Firebase disconnected. Reconnecting...");
+        indicateError(4); // Blink 3 times
+        connectToFirebase();
+    }
+}
+
+void indicateError(int errorCode) {
+    for (int i = 0; i < errorCode; i++) {
+        digitalWrite(LED_PIN, HIGH); // LED ON (Active Low)
+        delay(500);
+        digitalWrite(LED_PIN, LOW); // LED OFF
+        delay(500);
+    }
+}
+
+unsigned long calculateDuration(unsigned long start, unsigned long end) {
+    if (end < start) {
+        return (ULONG_MAX - start) + end;
+    }
+    return end - start;
+}
+
+void sendDataToFirebase(unsigned long timerDuration) {
+    FirebaseJson json;
+    json.set("timer_duration_ms", timerDuration);
+
+    String deviceID = "ESP8266_01";
+    String firebasePath = "/sensor_data/" + deviceID;
+    if (Firebase.pushJSON(firebaseData, firebasePath, json)) {
+        Serial.println("Data sent to Firebase successfully!");
+    } else {
+        Serial.print("Failed to send data to Firebase: ");
+        Serial.println(firebaseData.errorReason());
+        indicateError(5);
+    }
+}
+
 void setup() {
-  // Setup Serial for Debug
-  Serial.begin(115200);
+    Serial.begin(115200);
+    EEPROM.begin(512);
+    pinMode(LED_PIN, OUTPUT);
+    digitalWrite(LED_PIN, HIGH);
 
-  // Connect to Wi-Fi
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println("\nConnected to Wi-Fi");
+    pinMode(SENSOR_DIGITAL_PIN, INPUT);
+    connectToWiFi();
+    connectToFirebase();
 
-  // Initialize Firebase
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
-  Firebase.reconnectWiFi(true);
-
-  // Sensor Setup
-  pinMode(SENSOR_DIGITAL_PIN, INPUT);
-  pinMode(SENSOR_ANALOG_PIN, INPUT);
-
-  Serial.println("MH-Sensor Series Test");
+    Serial.println("System initialized successfully!");
 }
 
 void loop() {
-  // Read digital and analog sensor values
-  int digitalValue = digitalRead(SENSOR_DIGITAL_PIN);
-  int analogValue = analogRead(SENSOR_ANALOG_PIN);
+    checkWiFiConnection();
+    checkFirebaseConnection();
 
-  // Start or stop the timer based on the sensor state
-  if (digitalValue == LOW) {
-    // If the sensor is not detecting, start the timer
-    if (!timerRunning) {
-      startTime = millis();
-      timerRunning = true;
+    int digitalValue = digitalRead(SENSOR_DIGITAL_PIN);
+
+    if (digitalValue == HIGH) { // Sensor is active
+        if (!timerRunning) {
+            startTime = millis();
+            timerRunning = true;
+            Serial.println("Sensor activated. Timer started.");
+        }
+    } else { // Sensor is inactive
+        if (timerRunning) {
+            duration = calculateDuration(startTime, millis());
+            timerRunning = false;
+            Serial.print("Sensor deactivated. Timer duration: ");
+            Serial.println(duration);
+            sendDataToFirebase(duration);
+        }
     }
-  } else {
-    // If the sensor is detecting, stop the timer and calculate duration
-    if (timerRunning) {
-      duration = millis() - startTime;
-      timerRunning = false;
 
-      // Send the duration and sensor data to Firebase
-      sendDataToFirebase(duration, digitalValue, analogValue);
-    }
-  }
-
-  // Log the values to the Serial Monitor
-  Serial.print("Digital Value: ");
-  Serial.print(digitalValue);
-  Serial.print(" | Analog Value: ");
-  Serial.print(analogValue);
-  Serial.print(" | Timer Duration: ");
-  Serial.println(timerRunning ? (millis() - startTime) : duration);
-
-  // Delay for stability
-  delay(500);
-}
-
-void sendDataToFirebase(unsigned long timerDuration, int digitalValue, int analogValue) {
-  // Create a JSON object to store the data
-  FirebaseJson json;
-  json.set("digital_value", digitalValue);
-  json.set("analog_value", analogValue);
-  json.set("timer_duration_ms", timerDuration);
-
-  // Send the JSON data to Firebase
-  if (Firebase.pushJSON(firebaseData, "/sensor_data", json)) {
-    Serial.println("Data sent to Firebase successfully!");
-  } else {
-    Serial.print("Failed to send data to Firebase: ");
-    Serial.println(firebaseData.errorReason());
-  }
+    delay(500); // Avoid excessive processing
 }
