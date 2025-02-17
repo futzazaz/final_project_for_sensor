@@ -37,23 +37,7 @@ void checkFirebaseConnection();
 void indicateError(int errorCode);
 unsigned long calculateDuration(unsigned long start, unsigned long end);
 void sendDataToFirebase(unsigned long timerDuration);
-<<<<<<< HEAD
-void sendRaceResultToFirebase(int player, unsigned long lap1, unsigned long lap2, unsigned long lap3, unsigned long totalTime);
-String formatTime(unsigned long ms);
-bool debounceSensor();
 
-// เพิ่มฟังก์ชัน formatTime
-String formatTime(unsigned long ms) {
-    unsigned long minutes = ms / 60000;
-    unsigned long seconds = (ms % 60000) / 1000;
-    unsigned long milliseconds = ms % 1000;
-
-    char buffer[15];
-    sprintf(buffer, "%02lu:%02lu:%03lu", minutes, seconds, milliseconds);
-    return String(buffer);
-}
-=======
->>>>>>> parent of 27e1899 (succeed code)
 
 void connectToWiFi() {
     Serial.println("Connecting to Wi-Fi...");
