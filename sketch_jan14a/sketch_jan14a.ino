@@ -3,14 +3,12 @@
 #include <EEPROM.h>
 
 // Wi-Fi credentials
-
-#define WIFI_SSID "Mi 11 Lite"//I'am Shadow!
-#define WIFI_PASSWORD "Futzazaz140815"//
-
+#define WIFI_SSID "Mi 11 Lite" // Replace with your Wi-Fi SSID
+#define WIFI_PASSWORD "Futzazaz140815" // Replace with your Wi-Fi password
 
 // Firebase setup
-#define FIREBASE_HOST "driftking-d5a48-default-rtdb.asia-southeast1.firebasedatabase.app" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Realtime Database URL
-#define FIREBASE_AUTH "1oRXFar73k0U8QRnj9kqcoYAeBRUGfXhzxyEWzcE" // Replace with Auto, Monica, モニカ・セニオリス, monicaeverett, NunoiEnter, KOKOMO9462, Monica モニカ, Nunoi Enter  (エンタ一), The man who like Todoroki Hajime, ออโต้ขั้นกว่าของมนุษย์, J O R#moo85, Nunoi Enter, monicafansub, Monica FS, ปวช. ออโต้ ภาคกลาง, 💫𝓜𝓸𝓷𝓲𝓬𝓪💫, Momo Firebase Secret or Web API Key
+#define FIREBASE_HOST "driftking-d5a48-default-rtdb.asia-southeast1.firebasedatabase.app" // Replace with your Firebase Realtime Database URL
+#define FIREBASE_AUTH "1oRXFar73k0U8QRnj9kqcoYAeBRUGfXhzxyEWzcE" // Replace with your Firebase Secret or Web API Key
 
 // Sensor connections
 #define SENSOR_DIGITAL_PIN 16 // GPIO16
@@ -23,6 +21,14 @@
 unsigned long startTime = 0;
 unsigned long duration = 0;
 bool timerRunning = false;
+
+// Lap tracking variables
+bool carAtSensor = false;
+unsigned long lapStartTime = 0;
+unsigned long lapEndTime = 0;
+unsigned long lapTimes[3] = {0, 0, 0};  
+int lapCount = 0;
+int playerCount = 1;
 
 // Firebase object
 FirebaseData firebaseData;
@@ -37,7 +43,19 @@ void checkFirebaseConnection();
 void indicateError(int errorCode);
 unsigned long calculateDuration(unsigned long start, unsigned long end);
 void sendDataToFirebase(unsigned long timerDuration);
+void sendRaceResultToFirebase(int player, unsigned long lap1, unsigned long lap2, unsigned long lap3, unsigned long totalTime);
+String formatTime(unsigned long ms);
 
+// เพิ่มฟังก์ชัน formatTime
+String formatTime(unsigned long ms) {
+    unsigned long minutes = ms / 60000;
+    unsigned long seconds = (ms % 60000) / 1000;
+    unsigned long milliseconds = ms % 1000;
+
+    char buffer[15];
+    sprintf(buffer, "%02lu:%02lu:%03lu", minutes, seconds, milliseconds);
+    return String(buffer);
+}
 
 void connectToWiFi() {
     Serial.println("Connecting to Wi-Fi...");
@@ -96,52 +114,22 @@ unsigned long calculateDuration(unsigned long start, unsigned long end) {
     return end - start;
 }
 
-void sendDataToFirebase(unsigned long timerDuration) {
+// ฟังก์ชันส่งข้อมูลผลการแข่งไปยัง Firebase
+void sendRaceResultToFirebase(int player, unsigned long lap1, unsigned long lap2, unsigned long lap3, unsigned long totalTime) {
+    String path = "/race_results/player" + String(player);
     FirebaseJson json;
-    json.set("timer_duration_ms", timerDuration);
+    json.set("lap1", formatTime(lap1));
+    json.set("lap2", formatTime(lap2));
+    json.set("lap3", formatTime(lap3));
+    json.set("totalTime", formatTime(totalTime));
 
-<<<<<<< HEAD
-    int retryCount = 0;
-    while (retryCount < 3) { // พยายามส่งข้อมูล 3 ครั้ง
-        if (Firebase.setJSON(firebaseData, path, json)) {
-            Serial.println("Race result sent to Firebase successfully!");
-            return;
-        } else {
-            Serial.print("Failed to send race result to Firebase: ");
-            Serial.println(firebaseData.errorReason());
-            indicateError(5);
-            retryCount++;
-            delay(1000); // รอ 1 วินาทีก่อนพยายามใหม่
-        }
-=======
-    String deviceID = "ESP8266_01";
-    String firebasePath = "/sensor_data/" + deviceID;
-    if (Firebase.pushJSON(firebaseData, firebasePath, json)) {
-        Serial.println("Data sent to Firebase successfully!");
+    if (Firebase.setJSON(firebaseData, path, json)) {
+        Serial.println("Race result sent to Firebase successfully!");
     } else {
-        Serial.print("Failed to send data to Firebase: ");
+        Serial.print("Failed to send race result to Firebase: ");
         Serial.println(firebaseData.errorReason());
         indicateError(5);
->>>>>>> parent of 27e1899 (succeed code)
     }
-    Serial.println("Failed to send data after 3 attempts.");
-}
-
-bool debounceSensor() {
-    static unsigned long lastDebounceTime = 0;
-    static bool lastSensorState = LOW;
-    bool currentSensorState = digitalRead(SENSOR_DIGITAL_PIN) == HIGH;
-
-    if (currentSensorState != lastSensorState) {
-        lastDebounceTime = millis();
-    }
-
-    if ((millis() - lastDebounceTime) > 50) { // Debounce time 50ms
-        lastSensorState = currentSensorState;
-        return currentSensorState;
-    }
-
-    return lastSensorState;
 }
 
 void setup() {
@@ -161,8 +149,7 @@ void loop() {
     checkWiFiConnection();
     checkFirebaseConnection();
 
-<<<<<<< HEAD
-    bool currentSensorState = debounceSensor();  // ใช้ฟังก์ชัน Debounce
+    bool currentSensorState = digitalRead(SENSOR_DIGITAL_PIN) == HIGH;  // Detects car presence
 
     if (!carAtSensor && currentSensorState) {
         if (lapStartTime > 0) {
@@ -182,33 +169,14 @@ void loop() {
                 delay(2000);  
                 lapCount = 0;
                 lapStartTime = 0;
-                memset(lapTimes, 0, sizeof(lapTimes)); // เคลียร์อาเรย์ lapTimes
                 playerCount++;  
             }
-=======
-    int digitalValue = digitalRead(SENSOR_DIGITAL_PIN);
-
-    if (digitalValue == HIGH) { // Sensor is active
-        if (!timerRunning) {
-            startTime = millis();
-            timerRunning = true;
-            Serial.println("Sensor activated. Timer started.");
         }
-    } else { // Sensor is inactive
-        if (timerRunning) {
-            duration = calculateDuration(startTime, millis());
-            timerRunning = false;
-            Serial.print("Sensor deactivated. Timer duration: ");
-            Serial.println(duration);
-            sendDataToFirebase(duration);
->>>>>>> parent of 27e1899 (succeed code)
-        }
+        carAtSensor = true;  
+    } else if (carAtSensor && !currentSensorState) {
+        lapStartTime = millis();
+        carAtSensor = false;
     }
 
-<<<<<<< HEAD
-    delay(100); // ลด delay เพื่อเพิ่มความเร็วในการตรวจจับ
-}
-=======
     delay(500); // Avoid excessive processing
 }
->>>>>>> parent of 27e1899 (succeed code)
