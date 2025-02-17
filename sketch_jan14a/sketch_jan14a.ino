@@ -45,6 +45,7 @@ unsigned long calculateDuration(unsigned long start, unsigned long end);
 void sendDataToFirebase(unsigned long timerDuration);
 void sendRaceResultToFirebase(int player, unsigned long lap1, unsigned long lap2, unsigned long lap3, unsigned long totalTime);
 String formatTime(unsigned long ms);
+bool debounceSensor();
 
 // เพิ่มฟังก์ชัน formatTime
 String formatTime(unsigned long ms) {
@@ -123,13 +124,37 @@ void sendRaceResultToFirebase(int player, unsigned long lap1, unsigned long lap2
     json.set("lap3", formatTime(lap3));
     json.set("totalTime", formatTime(totalTime));
 
-    if (Firebase.setJSON(firebaseData, path, json)) {
-        Serial.println("Race result sent to Firebase successfully!");
-    } else {
-        Serial.print("Failed to send race result to Firebase: ");
-        Serial.println(firebaseData.errorReason());
-        indicateError(5);
+    int retryCount = 0;
+    while (retryCount < 3) { // พยายามส่งข้อมูล 3 ครั้ง
+        if (Firebase.setJSON(firebaseData, path, json)) {
+            Serial.println("Race result sent to Firebase successfully!");
+            return;
+        } else {
+            Serial.print("Failed to send race result to Firebase: ");
+            Serial.println(firebaseData.errorReason());
+            indicateError(5);
+            retryCount++;
+            delay(1000); // รอ 1 วินาทีก่อนพยายามใหม่
+        }
     }
+    Serial.println("Failed to send data after 3 attempts.");
+}
+
+bool debounceSensor() {
+    static unsigned long lastDebounceTime = 0;
+    static bool lastSensorState = LOW;
+    bool currentSensorState = digitalRead(SENSOR_DIGITAL_PIN) == HIGH;
+
+    if (currentSensorState != lastSensorState) {
+        lastDebounceTime = millis();
+    }
+
+    if ((millis() - lastDebounceTime) > 50) { // Debounce time 50ms
+        lastSensorState = currentSensorState;
+        return currentSensorState;
+    }
+
+    return lastSensorState;
 }
 
 void setup() {
@@ -149,7 +174,7 @@ void loop() {
     checkWiFiConnection();
     checkFirebaseConnection();
 
-    bool currentSensorState = digitalRead(SENSOR_DIGITAL_PIN) == HIGH;  // Detects car presence
+    bool currentSensorState = debounceSensor();  // ใช้ฟังก์ชัน Debounce
 
     if (!carAtSensor && currentSensorState) {
         if (lapStartTime > 0) {
@@ -169,6 +194,7 @@ void loop() {
                 delay(2000);  
                 lapCount = 0;
                 lapStartTime = 0;
+                memset(lapTimes, 0, sizeof(lapTimes)); // เคลียร์อาเรย์ lapTimes
                 playerCount++;  
             }
         }
@@ -178,5 +204,5 @@ void loop() {
         carAtSensor = false;
     }
 
-    delay(500); // Avoid excessive processing
+    delay(100); // ลด delay เพื่อเพิ่มความเร็วในการตรวจจับ
 }
