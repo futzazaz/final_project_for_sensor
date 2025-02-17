@@ -1,4 +1,3 @@
-
 #include <ESP8266WiFi.h>
 #include <FirebaseESP8266.h>
 #include <EEPROM.h>
