@@ -6,9 +6,9 @@
 #define WIFI_SSID "Mi 11 Lite"
 #define WIFI_PASSWORD "Futzazaz140815"
 
-// Firebase setup - updated to match your React app's config
+// Firebase setup - updated to match your database
 #define FIREBASE_HOST "driftking-d5a48-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH "AIzaSyC8YYcSzVrk8QEFwtkonRQsQujf-A0JeN8"
+#define FIREBASE_AUTH "1oRXFar73k0U8QRnj9kqcoYAeBRUGfXhzxyEWzcE"  // Using your database secret token here
 
 // Sensor connections
 #define SENSOR_DIGITAL_PIN 16 // GPIO16
@@ -57,19 +57,35 @@ void connectToWiFi() {
 
 void connectToFirebase() {
     Serial.println("Connecting to Firebase...");
-    firebaseConfig.host = FIREBASE_HOST;
-    firebaseConfig.api_key = FIREBASE_AUTH;
+    
+    // Remove "https://" from the beginning and "/" from the end if present
+    String host = FIREBASE_HOST;
+    if (host.startsWith("https://")) {
+        host = host.substring(8);
+    }
+    if (host.endsWith("/")) {
+        host = host.substring(0, host.length() - 1);
+    }
+    
+    // Configure Firebase with legacy token auth
+    firebaseConfig.database_url = host;
+    firebaseConfig.signer.tokens.legacy_token = FIREBASE_AUTH;
     
     Firebase.begin(&firebaseConfig, &firebaseAuth);
     Firebase.reconnectWiFi(true);
-
-    if (!Firebase.ready()) {
+    
+    // Wait for connection and report status
+    delay(1000);
+    if (Firebase.ready()) {
+        Serial.println("Connected to Firebase successfully!");
+    } else {
         Serial.println("Failed to connect to Firebase!");
+        Serial.print("Error reason: ");
+        Serial.println(Firebase.getErrorReason());
         indicateError(3); // Blink LED 3 times
         delay(1000);
         ESP.restart(); // Restart the ESP if failed to connect
     }
-    Serial.println("Connected to Firebase");
 }
 
 void checkWiFiConnection() {
@@ -111,8 +127,9 @@ String formatTime(unsigned long duration) {
 void sendLapTimeToFirebase(int player, int lap, String formattedTime) {
     String playerKey = "player" + String(player);
     String lapKey = "lap" + String(lap);
+    String path = "race_results/" + playerKey + "/" + lapKey;
     
-    if (Firebase.setString(firebaseData, "race_results/" + playerKey + "/" + lapKey, formattedTime)) {
+    if (Firebase.setString(firebaseData, path, formattedTime)) {
         Serial.print("Lap time sent to Firebase: Player ");
         Serial.print(player);
         Serial.print(", Lap ");
@@ -194,6 +211,9 @@ void setup() {
     digitalWrite(LED_PIN, HIGH); // Turn off LED initially (assuming active LOW)
     
     pinMode(SENSOR_DIGITAL_PIN, INPUT);
+    
+    // Initialize with a pause to stabilize
+    delay(1000);
     
     connectToWiFi();
     connectToFirebase();
